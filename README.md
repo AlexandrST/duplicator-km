@@ -36,3 +36,8 @@ python app.py
 
 `01<GTIN14>21<SN><GS>91<...><GS>92<...>`
 
+## Другие решения найденные на просторах интернета
+
+https://duplicator-km.leangroup.ru/ - платное
+
+https://sovremennye.ru/uslugi/dublirovanie-kodov-markirovki - платное
