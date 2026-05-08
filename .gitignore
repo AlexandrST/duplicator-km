@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+.env
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# App outputs
+datamatrix.png
+
+# Third-party binaries/docs (install separately)
+zint.exe
+qtZint.exe
+manual.txt
+manual.pdf
+tcl/
