@@ -41,3 +41,5 @@ python app.py
 https://duplicator-km.leangroup.ru/ - платное
 
 https://sovremennye.ru/uslugi/dublirovanie-kodov-markirovki - платное
+
+https://union-label.ru/duplication-barcode/ - триал и на сайте в онлайн можно копировать бесплатно
