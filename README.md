@@ -45,3 +45,5 @@ https://sovremennye.ru/uslugi/dublirovanie-kodov-markirovki - платное
 https://union-label.ru/duplication-barcode/ - триал и на сайте в онлайн можно копировать бесплатно
 
 https://allegrosoft.ru/n/besplatnaya-programma-dlya-dublirovaniya-kodov-markirovki-chestnyy-znak - бесплатно по заявке
+
+https://infostart.ru/1c/tools/2404116/ - дополнительное расширение 1С (платное)
