@@ -28,14 +28,47 @@ def normalize_km(raw: str) -> NormalizeResult:
 
     # If already contains GS, keep it (but still normalize view)
     if GS in s:
-        # Try to convert common GS1-with-GS form into AI string for zint (no control chars).
-        # Typical: 01<GTIN14>21<SN> <GS> 93<CHECK4>
-        m_gs = re.fullmatch(r"01(\d{14})21(.+?)\x1d93(.{4})", s)
-        if m_gs:
-            zint = f"[01]{m_gs.group(1)}[21]{m_gs.group(2)}[93]{m_gs.group(3)}"
-        else:
-            # Fallback: strip GS (zint GS1 mode can't accept raw control chars)
+        # Convert GS-separated GS1 string into Zint AI format (no control chars).
+        # Typical:
+        # - 01<GTIN14>21<SN> <GS> 93<CHECK4>
+        # - 01<GTIN14>21<SN> <GS> 91<...> <GS> 92<...>
+
+        def zint_ai_from_gs_payload(payload: str) -> str | None:
+            parts = payload.split(GS)
+            if not parts or not parts[0].startswith("01"):
+                return None
+
+            p0 = parts[0]
+            # p0 must at least contain 01 + GTIN14 + 21 + something
+            if len(p0) < 2 + 14 + 2:
+                return None
+            if p0[0:2] != "01" or not p0[2:16].isdigit() or p0[16:18] != "21":
+                return None
+
+            gtin = p0[2:16]
+            serial = p0[18:]
+            if serial == "":
+                return None
+
+            out = [f"[01]{gtin}", f"[21]{serial}"]
+
+            for seg in parts[1:]:
+                if not seg:
+                    continue
+                # Most common in марки: 91/92/93 are variable-length (until GS / end)
+                ai = seg[:2]
+                data = seg[2:]
+                if len(ai) != 2 or not ai.isdigit() or data == "":
+                    return None
+                out.append(f"[{ai}]{data}")
+
+            return "".join(out)
+
+        zint = zint_ai_from_gs_payload(s)
+        if not zint:
+            # Last-resort fallback: strip GS (some inputs may already be in AI bracket form)
             zint = s.replace(GS, "")
+
         return NormalizeResult(raw=raw, normalized_gs=s, normalized_view=s.replace(GS, "<GS>"), zint_gs1=zint)
 
     # Pattern: 01 GTIN14 21 SN(6) 93 CHECK(4)
@@ -162,6 +195,26 @@ class App(tk.Tk):
         ttk.Label(frm, text="Отсканированная марка (строка КМ):").pack(anchor="w", **pad)
         txt = tk.Text(frm, height=4, wrap="word")
         txt.pack(fill="x", **pad)
+
+        menu = tk.Menu(txt, tearoff=False)
+        menu.add_command(label="Копировать", command=lambda: txt.event_generate("<<Copy>>"))
+        menu.add_command(label="Вставить", command=lambda: txt.event_generate("<<Paste>>"))
+        menu.add_command(label="Вырезать", command=lambda: txt.event_generate("<<Cut>>"))
+        menu.add_separator()
+        menu.add_command(label="Выделить всё", command=lambda: txt.event_generate("<<SelectAll>>"))
+
+        def show_menu(e: tk.Event) -> str:
+            txt.focus_set()
+            menu.tk_popup(e.x_root, e.y_root)
+            return "break"
+
+        # Явно добавляем copy/paste и контекстное меню, т.к. на некоторых системах
+        # стандартные биндинги Tk могут быть недоступны/переопределены.
+        txt.bind("<Button-3>", show_menu)
+        txt.bind("<Control-c>", lambda _e: (txt.event_generate("<<Copy>>"), "break")[1])
+        txt.bind("<Control-v>", lambda _e: (txt.event_generate("<<Paste>>"), "break")[1])
+        txt.bind("<Control-x>", lambda _e: (txt.event_generate("<<Cut>>"), "break")[1])
+        txt.bind("<Control-a>", lambda _e: (txt.event_generate("<<SelectAll>>"), "break")[1])
 
         def sync_text_to_var(*_args: object) -> None:
             self.raw_var.set(txt.get("1.0", "end").strip())
